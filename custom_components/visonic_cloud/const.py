@@ -21,7 +21,7 @@ CONF_APP_ID = "app_id"
 CONF_USER_TOKEN = "user_token"
 CONF_SESSION_TOKEN = "session_token"
 
-UPDATE_INTERVAL = timedelta(minutes=2)
+UPDATE_INTERVAL = timedelta(seconds=30)
 
 # Device type mappings
 DEVICE_TYPE_ZONE = "ZONE"
