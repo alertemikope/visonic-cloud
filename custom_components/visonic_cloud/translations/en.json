@@ -3,10 +3,11 @@
     "step": {
       "user": {
         "title": "Visonic Cloud Login",
-        "description": "Enter your Visonic Cloud account credentials.",
+        "description": "Enter your Visonic Cloud account credentials and cloud URL.",
         "data": {
           "email": "Email",
-          "password": "Password"
+          "password": "Password",
+          "base_url": "Cloud Base URL"
         }
       },
       "select_panel": {

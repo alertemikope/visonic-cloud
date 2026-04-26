@@ -16,9 +16,11 @@ from homeassistant.helpers.aiohttp_client import async_get_clientsession
 from .api import VisonicAuthError, VisonicCloudApi, VisonicConnectionError
 from .const import (
     CONF_APP_ID,
+    CONF_BASE_URL,
     CONF_PANEL_ALIAS,
     CONF_PANEL_SERIAL,
     CONF_USER_CODE,
+    DEFAULT_BASE_URL,
     DOMAIN,
 )
 
@@ -28,6 +30,7 @@ STEP_USER_DATA_SCHEMA = vol.Schema(
     {
         vol.Required(CONF_EMAIL): str,
         vol.Required(CONF_PASSWORD): str,
+        vol.Required(CONF_BASE_URL, default=DEFAULT_BASE_URL): str,
     }
 )
 
@@ -41,6 +44,7 @@ class VisonicCloudConfigFlow(ConfigFlow, domain=DOMAIN):
         """Initialize the config flow."""
         self._email: str = ""
         self._password: str = ""
+        self._base_url: str = DEFAULT_BASE_URL
         self._app_id: str = ""
         self._user_token: str = ""
         self._panels: list[dict[str, Any]] = []
@@ -57,6 +61,7 @@ class VisonicCloudConfigFlow(ConfigFlow, domain=DOMAIN):
         if user_input is not None:
             self._email = user_input[CONF_EMAIL]
             self._password = user_input[CONF_PASSWORD]
+            self._base_url = user_input[CONF_BASE_URL].rstrip("/")
             self._app_id = str(uuid.uuid4())
 
             session = async_get_clientsession(self.hass)
@@ -65,6 +70,7 @@ class VisonicCloudConfigFlow(ConfigFlow, domain=DOMAIN):
                 email=self._email,
                 password=self._password,
                 app_id=self._app_id,
+                base_url=self._base_url,
             )
 
             try:
@@ -158,6 +164,7 @@ class VisonicCloudConfigFlow(ConfigFlow, domain=DOMAIN):
                     data={
                         CONF_EMAIL: self._email,
                         CONF_PASSWORD: self._password,
+                        CONF_BASE_URL: self._base_url,
                         CONF_APP_ID: self._app_id,
                         CONF_PANEL_SERIAL: self._panel_serial,
                         CONF_PANEL_ALIAS: self._panel_alias,

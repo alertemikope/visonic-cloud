@@ -14,10 +14,12 @@ from homeassistant.helpers.aiohttp_client import async_get_clientsession
 from .api import VisonicCloudApi
 from .const import (
     CONF_APP_ID,
+    CONF_BASE_URL,
     CONF_PANEL_SERIAL,
     CONF_SESSION_TOKEN,
     CONF_USER_CODE,
     CONF_USER_TOKEN,
+    DEFAULT_BASE_URL,
     DOMAIN,
     PLATFORMS,
 )
@@ -37,6 +39,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         email=entry.data[CONF_EMAIL],
         password=entry.data[CONF_PASSWORD],
         app_id=entry.data[CONF_APP_ID],
+        base_url=entry.data.get(CONF_BASE_URL, DEFAULT_BASE_URL),
     )
 
     panel_serial = entry.data[CONF_PANEL_SERIAL]

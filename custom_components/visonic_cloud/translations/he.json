@@ -3,10 +3,11 @@
     "step": {
       "user": {
         "title": "התחברות Visonic Cloud",
-        "description": "הזן את פרטי חשבון Visonic Cloud שלך.",
+        "description": "הזן את פרטי חשבון Visonic Cloud שלך ואת כתובת ה-URL של הענן.",
         "data": {
           "email": "אימייל",
-          "password": "סיסמה"
+          "password": "סיסמה",
+          "base_url": "כתובת URL של הענן"
         }
       },
       "select_panel": {

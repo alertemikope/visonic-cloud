@@ -7,7 +7,7 @@ from typing import Any
 
 import aiohttp
 
-from .const import API_BASE
+from .const import build_api_base
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -31,12 +31,14 @@ class VisonicCloudApi:
         email: str,
         password: str,
         app_id: str,
+        base_url: str,
     ) -> None:
         """Initialize the API client."""
         self._session = session
         self._email = email
         self._password = password
         self._app_id = app_id
+        self._api_base = build_api_base(base_url)
         self._user_token: str | None = None
         self._session_token: str | None = None
         self._panel_serial: str | None = None
@@ -85,7 +87,7 @@ class VisonicCloudApi:
         retry_on_expire: bool = True,
     ) -> Any:
         """Make an API request with automatic session refresh."""
-        url = f"{API_BASE}/{endpoint}"
+        url = f"{self._api_base}/{endpoint}"
         try:
             async with self._session.request(
                 method, url, headers=headers, json=json_data
@@ -131,7 +133,7 @@ class VisonicCloudApi:
         """Authenticate with email and password. Returns user info with user_token."""
         try:
             async with self._session.post(
-                f"{API_BASE}/auth",
+                f"{self._api_base}/auth",
                 json={
                     "email": self._email,
                     "password": self._password,
