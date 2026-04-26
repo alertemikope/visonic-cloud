@@ -3,11 +3,12 @@
 from __future__ import annotations
 
 import logging
+from json import JSONDecodeError
 from typing import Any
 
 import aiohttp
 
-from .const import build_api_base
+from .const import DEFAULT_API_VERSION, SUPPORTED_API_VERSIONS, build_api_base
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -38,11 +39,30 @@ class VisonicCloudApi:
         self._email = email
         self._password = password
         self._app_id = app_id
-        self._api_base = build_api_base(base_url)
+        self._base_url = base_url.rstrip("/")
+        self._api_version = DEFAULT_API_VERSION
+        self._api_base = build_api_base(self._base_url, self._api_version)
         self._user_token: str | None = None
         self._session_token: str | None = None
         self._panel_serial: str | None = None
         self._user_code: str | None = None
+
+    def _set_api_version(self, api_version: str) -> None:
+        """Update the active API version."""
+        self._api_version = api_version
+        self._api_base = build_api_base(self._base_url, api_version)
+
+    async def _read_error(self, resp: aiohttp.ClientResponse) -> tuple[str, str | None]:
+        """Extract text and error reason from a failed response."""
+        text = await resp.text()
+        try:
+            payload = await resp.json(content_type=None)
+        except (JSONDecodeError, aiohttp.ContentTypeError):
+            payload = None
+        reason = None
+        if isinstance(payload, dict):
+            reason = payload.get("error_reason_code")
+        return text, reason
 
     @property
     def user_token(self) -> str | None:
@@ -108,7 +128,9 @@ class VisonicCloudApi:
                     raise VisonicAuthError("Authentication failed")
 
                 if resp.status != 200:
-                    text = await resp.text()
+                    text, reason = await self._read_error(resp)
+                    if endpoint == "panel/login" and resp.status in (400, 401, 403):
+                        raise VisonicAuthError(reason or "Authentication failed")
                     _LOGGER.error(
                         "API error %s for %s: %s", resp.status, endpoint, text
                     )
@@ -131,29 +153,46 @@ class VisonicCloudApi:
 
     async def authenticate(self) -> dict[str, Any]:
         """Authenticate with email and password. Returns user info with user_token."""
-        try:
-            async with self._session.post(
-                f"{self._api_base}/auth",
-                json={
-                    "email": self._email,
-                    "password": self._password,
-                    "app_id": self._app_id,
-                },
-            ) as resp:
-                if resp.status == 401:
-                    raise VisonicAuthError("Invalid email or password")
-                if resp.status != 200:
-                    text = await resp.text()
+        last_error: VisonicConnectionError | None = None
+
+        for api_version in SUPPORTED_API_VERSIONS:
+            self._set_api_version(api_version)
+            try:
+                async with self._session.post(
+                    f"{self._api_base}/auth",
+                    json={
+                        "email": self._email,
+                        "password": self._password,
+                        "app_id": self._app_id,
+                    },
+                ) as resp:
+                    if resp.status == 200:
+                        data = await resp.json()
+                        self._user_token = data["user_token"]
+                        return data
+
+                    text, reason = await self._read_error(resp)
+                    if resp.status in (400, 401) and reason == "WrongCombination":
+                        raise VisonicAuthError("Invalid email or password")
+
+                    if resp.status == 404:
+                        last_error = VisonicConnectionError(
+                            f"Auth endpoint not found for API version {api_version}"
+                        )
+                        continue
+
                     raise VisonicConnectionError(
                         f"Auth failed with status {resp.status}: {text}"
                     )
-                data = await resp.json()
-                self._user_token = data["user_token"]
-                return data
-        except aiohttp.ClientError as err:
-            raise VisonicConnectionError(
-                f"Connection error during auth: {err}"
-            ) from err
+            except aiohttp.ClientError as err:
+                last_error = VisonicConnectionError(
+                    f"Connection error during auth: {err}"
+                )
+
+        if last_error is not None:
+            raise last_error
+
+        raise VisonicConnectionError("Unable to determine a working API version")
 
     async def get_panels(self) -> list[dict[str, Any]]:
         """Get list of panels for the authenticated user."""

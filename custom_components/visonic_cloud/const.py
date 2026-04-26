@@ -5,12 +5,13 @@ from datetime import timedelta
 DOMAIN = "visonic_cloud"
 
 DEFAULT_BASE_URL = "https://visonic.tycomonitor.com"
-API_VERSION = "14.0"
+DEFAULT_API_VERSION = "14.0"
+SUPPORTED_API_VERSIONS = ("14.0", "10.0")
 
 
-def build_api_base(base_url: str) -> str:
+def build_api_base(base_url: str, api_version: str) -> str:
     """Build the REST API base URL."""
-    return f"{base_url.rstrip('/')}/rest_api/{API_VERSION}"
+    return f"{base_url.rstrip('/')}/rest_api/{api_version}"
 
 CONF_BASE_URL = "base_url"
 CONF_PANEL_SERIAL = "panel_serial"
