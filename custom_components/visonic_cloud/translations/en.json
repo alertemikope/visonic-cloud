@@ -17,6 +17,13 @@
           "panel_serial": "Panel"
         }
       },
+      "manual_panel": {
+        "title": "Panel Serial",
+        "description": "No panels were returned by this cloud. Enter the panel serial manually.",
+        "data": {
+          "panel_serial": "Panel Serial"
+        }
+      },
       "panel_code": {
         "title": "Panel Code",
         "description": "Enter the user code (PIN) for the selected panel.",

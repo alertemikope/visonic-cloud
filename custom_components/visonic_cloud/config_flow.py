@@ -86,7 +86,7 @@ class VisonicCloudConfigFlow(ConfigFlow, domain=DOMAIN):
 
             if not errors:
                 if not self._panels:
-                    errors["base"] = "no_panels"
+                    return await self.async_step_manual_panel()
                 elif len(self._panels) == 1:
                     # Auto-select the only panel
                     panel = self._panels[0]
@@ -99,6 +99,27 @@ class VisonicCloudConfigFlow(ConfigFlow, domain=DOMAIN):
         return self.async_show_form(
             step_id="user",
             data_schema=STEP_USER_DATA_SCHEMA,
+            errors=errors,
+        )
+
+    async def async_step_manual_panel(
+        self, user_input: dict[str, Any] | None = None
+    ) -> ConfigFlowResult:
+        """Handle manual panel serial entry when the cloud returns no panel list."""
+        errors: dict[str, str] = {}
+
+        if user_input is not None:
+            self._panel_serial = user_input[CONF_PANEL_SERIAL].strip()
+            self._panel_alias = self._panel_serial
+            return await self.async_step_panel_code()
+
+        return self.async_show_form(
+            step_id="manual_panel",
+            data_schema=vol.Schema(
+                {
+                    vol.Required(CONF_PANEL_SERIAL): str,
+                }
+            ),
             errors=errors,
         )
 
